@@ -269,7 +269,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
 
     self.solutions = sol.clone();
 
-    pb.finish();
+    pb.finish_and_clear();
 
     (sol, pb.elapsed())
   }

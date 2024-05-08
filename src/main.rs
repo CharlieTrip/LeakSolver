@@ -13,11 +13,38 @@ use crate::leakfun::LeakFun;
 use crate::solver::aes_solver::AESSolver;
 use crate::stat::random_test;
 
+use std::env;
+
 fn main() {
   // min_test();
 
-  for i in 0..10 {
-    random_test(1, i, false);
+  let args: Vec<String> = env::args().collect();
+
+  // Check if both arguments are provided
+  if args.len() < 3 {
+    println!("Usage: ./leak_solver num_tests weight");
+    return;
+  }
+
+  let tests: usize = match args[1].parse() {
+    Ok(num) => num,
+    Err(_) => {
+      println!("Error: num_tests argument is not a valid number.");
+      return;
+    }
+  };
+
+  let spec: u8 = match args[2].parse() {
+    Ok(num) => num,
+    Err(_) => {
+      println!("Error: weight argument is not a valid number.");
+      return;
+    }
+  };
+
+  for i in spec..(spec + 1) {
+    random_test(tests, i, false);
+    random_test(tests, i, true);
   }
 }
 

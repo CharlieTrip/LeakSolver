@@ -5,7 +5,7 @@ use crate::leakfun::hw8::Hamming8;
 use crate::leakfun::LeakFun;
 use crate::solver::aes_solver::AESSolver;
 
-use indicatif::ProgressIterator;
+use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::*;
 
 const HWSCORE: [u8; 9] = [0, 1, 2, 3, 4, 3, 2, 1, 0];
@@ -14,7 +14,18 @@ const BINOM: [u8; 9] = [1, 8, 28, 56, 70, 56, 28, 8, 1];
 pub fn random_test(tot: usize, weight: u8, inv: bool) {
   let mut rng = rand::thread_rng();
 
-  for _ in (0..tot).progress() {
+  let sty = ProgressStyle::with_template(
+            "{msg} {spinner:.green} [{elapsed_precise}] [{bar:25.cyan/blue}] ({pos}/{len}, {eta} ({per_sec})",
+        )
+        .unwrap()
+        .progress_chars("##-");
+
+  let pb = ProgressBar::new(tot as u64);
+  pb.set_style(sty.clone());
+  pb.set_message(format!("Test {} {}", weight, inv));
+
+  for _ in 0..tot {
+    pb.inc(1);
     let h8 = Hamming8 {};
 
     let x: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
@@ -68,6 +79,7 @@ pub fn random_test(tot: usize, weight: u8, inv: bool) {
       k
     );
   }
+  pb.finish_and_clear();
 }
 
 /// Return a vector with a given HW
