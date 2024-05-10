@@ -6,14 +6,13 @@
 
 * [ ] Write documentation
 * [ ] Add comments
-* [ ] Write explanations (blog)
 * [ ] Complete AES tests:
 	+ [ ] key scheduler
 	+ [ ] parallel sbox
 	+ [ ] mixing layer
-* [ ] Complete AESGen tests:
-* [ ] compute leaks by unrolling full round
-
+* [ ] Complete AESGen tests
+* [ ] Compute leaks by unrolling full round
+* [√] Write explanations (blog)
 
 ## TODO
 
