@@ -129,7 +129,7 @@ def plot_scatter_histogram(df,unit='µs',disable=False,save=""):
 		plt.close()
 
 
-def collect_and_plot_statistics(N,what="effectiveHW",unit='µs',total=(True,128),disable=False,save=""):
+def collect_and_plot_statistics(N,what=("effectiveHW","Effective HW","timing_ms","Timing"),unit='µs',total=(True,128),disable=False,save=""):
 		# Initialize lists to store statistical values
 		data = []
 
@@ -150,18 +150,18 @@ def collect_and_plot_statistics(N,what="effectiveHW",unit='µs',total=(True,128)
 		
 		# Generate all possible values of effectiveHW
 		if total[0]:
-			all_values = pd.DataFrame({what: range(total[1]+1)}) 
+			all_values = pd.DataFrame({what[0]: range(total[1]+1)}) 
 
 			# Merge with result_df to add missing values
-			result_df = pd.merge(all_values, result_df, how='left', on=what)
+			result_df = pd.merge(all_values, result_df, how='left', on=what[0])
 
 
 		
 		# Plot the violin plot
 		plt.figure(figsize=(8, 5))
-		sns.boxplot(x=what, y='timing_ms', data=result_df,showfliers=False,whis=0)
-		plt.xlabel('Effective HW')
-		plt.ylabel('Timing ({})'.format(unit))
+		sns.boxplot(x=what[0], y=what[2], data=result_df,showfliers=False,whis=0)
+		plt.xlabel(what[1])
+		plt.ylabel(what[3])
 		plt.grid(True)
 		
 		if total[0]:
@@ -180,7 +180,7 @@ def collect_and_plot_statistics(N,what="effectiveHW",unit='µs',total=(True,128)
 
 
 # General Visualization Parameters
-unit = 'ms'
+unit = 's'
 disable = True
 
 
@@ -201,12 +201,16 @@ for i in range(max_index):
 	plot_scatter_histogram(df,unit=unit,disable=disable,save="img/"+file)
 
 total = True
-collect_and_plot_statistics(max_index,what="effectiveHW",unit=unit,total=(total,128),disable=disable,save="img/totalHW.tot")
-collect_and_plot_statistics(max_index,what="outSHW",unit=unit,total=(total,64),disable=disable,save="img/totalSHW.tot")
+collect_and_plot_statistics(max_index,what=("effectiveHW","Effective HW","timing_ms",'Timing ({})'.format(unit)),unit=unit,total=(total,128),disable=disable,save="img/totalHW.tot")
+collect_and_plot_statistics(max_index,what=("outSHW","Special HW","timing_ms",'Timing ({})'.format(unit)),unit=unit,total=(total,64),disable=disable,save="img/totalSHW.tot")
+collect_and_plot_statistics(max_index,what=("effectiveHW","Effective HW","solutions",'Solutions'),unit=unit,total=(total,128),disable=disable,save="img/totalSol")
+
 
 total = False
-collect_and_plot_statistics(max_index,what="effectiveHW",unit=unit,total=(total,128),disable=disable,save="img/totalHW")
-collect_and_plot_statistics(max_index,what="outSHW",unit=unit,total=(total,64),disable=disable,save="img/totalSHW")
+collect_and_plot_statistics(max_index,what=("effectiveHW","Effective HW","timing_ms",'Timing ({})'.format(unit)),unit=unit,total=(total,128),disable=disable,save="img/totalHW")
+collect_and_plot_statistics(max_index,what=("outSHW","Special HW","timing_ms",'Timing ({})'.format(unit)),unit=unit,total=(total,64),disable=disable,save="img/totalSHW")
+
+
 
 
 dfs = []
