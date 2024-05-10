@@ -12,17 +12,17 @@
 	+ [ ] mixing layer
 * [ ] Complete AESGen tests
 * [ ] Compute leaks by unrolling full round
-* [√] Write explanations (blog)
+* [x] Write explanations (blog)
 
 ## TODO
 
 * [ ] Simplify the HOF structure for leaks
-* [ ] Different leak function (Hamming distance)
+* [ ] Different leak function (Hamming distance?)
 * [ ] Different cipher-scenarios
 	+ [ ] SKINNY
+	+ [ ] AES-192
 	+ [ ] AES-256
-* [ ] Sanitize inputs
-* [ ] CLI?
+* [ ] Full CLI?
 * [ ] Check for further generalization
 	+ [ ] Structured description of the checks
-
+* [x] Sanitize inputs (minimal CLI)
