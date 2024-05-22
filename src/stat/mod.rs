@@ -26,7 +26,6 @@ pub fn random_test(tot: usize, weight: u8, inv: bool) {
 
   for _ in 0..tot {
     pb.inc(1);
-    let h8 = Hamming8 {};
 
     let x: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
 
@@ -38,7 +37,9 @@ pub fn random_test(tot: usize, weight: u8, inv: bool) {
       k[i] ^= x[i];
     }
 
-    let lf = h8.get_leak_f();
+    let lf = Hamming8::leak_f;
+    let ilf = Hamming8::inv_leak_f;
+
     let gen = AESGen::generate(&x, &k, lf);
 
     // Print the generated array
@@ -47,21 +48,16 @@ pub fn random_test(tot: usize, weight: u8, inv: bool) {
     let mut win = 0;
     let mut wout = 0;
     let mut wfin = 0;
-    let lf = h8.get_leak_f();
 
     for i in 0..16 {
-      let j = lf(&k[i]) as usize;
+      let j = lf(k[i]) as usize;
       w += gen[i];
       win += HWSCORE[j];
       wout += HWSCORE[gen[i] as usize];
       wfin += HWSCORE[gen[16 + i] as usize];
     }
 
-    let mut solver = AESSolver::<u8>::new(
-      &([x.clone()].to_vec()),
-      &([gen].to_vec()),
-      Box::new(h8) as Box<dyn LeakFun<u8, u8>>,
-    );
+    let mut solver = AESSolver::new(&([x.clone()].to_vec()), &([gen].to_vec()), (lf, ilf));
 
     let (sols, dur) = solver.solve();
 

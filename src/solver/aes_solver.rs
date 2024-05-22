@@ -1,7 +1,7 @@
 #![allow(unused_assignments)]
 
 use crate::cipher::aes::AES;
-use crate::leakfun::LeakFun;
+
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 
@@ -11,30 +11,30 @@ use std::time::Duration;
 type X = Vec<u8>;
 type K = Vec<u8>;
 type I = u8;
+type L = u8;
 
-pub struct AESSolver<L> {
+type LeakF = fn(I) -> L;
+type LeakFInv = fn(L) -> Vec<I>;
+
+pub struct AESSolver {
   pub inputs: Vec<X>,
   pub leaks: Vec<Vec<L>>,
   pub candidates: Vec<Vec<u8>>,
-  pub leakfun: Box<dyn LeakFun<I, L>>,
+  pub leakfun: (LeakF, LeakFInv),
   pub index: IndexTree,
   pub solutions: Vec<K>,
 }
 
 /// Solver Trait
 /// X: input, K: key, I: leak input, L: leak output
-impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolver<L> {
+impl<'a> AESSolver {
   const PERMUTATION: [usize; 16] = [0, 5, 10, 15, 13, 2, 1, 14, 3, 12, 9, 4, 7, 8, 6, 11];
   const INV_PERMUTATION: [usize; 16] = [0, 6, 5, 8, 11, 1, 14, 12, 13, 10, 2, 15, 9, 4, 7, 3];
   const SKIPS: [usize; 9] = [6, 7, 9, 11, 13, 14, 15, 16, 17];
 
   /// Generate solver for the specific problem
   /// TODO: sanitize dimensions
-  pub fn new(
-    inputs: &Vec<X>,
-    leaks: &'a Vec<Vec<L>>,
-    leakfun: Box<dyn LeakFun<I, L>>,
-  ) -> AESSolver<L> {
+  pub fn new(inputs: &Vec<X>, leaks: &'a Vec<Vec<L>>, leakfun: (LeakF, LeakFInv)) -> AESSolver {
     let dim = inputs.len();
     let mut leakss: Vec<Vec<L>> = vec![];
 
@@ -45,7 +45,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
     }
 
     // Compute Intersected Key Candidate List
-    let mut candidates = AESSolver::<L>::get_candidates(&inputs[0], &leakss[0], &leakfun);
+    let mut candidates = AESSolver::get_candidates(&inputs[0], &leakss[0], leakfun.1);
     let mut weights: Vec<Vec<L>> = vec![leakss[1].clone()];
 
     for i in 1..dim {
@@ -53,7 +53,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
       let leak1 = &leakss[2 * i];
       let leak2 = leakss[(2 * i) + 1].clone();
       weights.push(leak2);
-      let cands = AESSolver::<L>::get_candidates(&input, &leak1, &leakfun);
+      let cands = AESSolver::get_candidates(&input, &leak1, leakfun.1);
       // TODO: Find better way to do intersection
       for i in 0..16 {
         let mut tmp = vec![];
@@ -94,11 +94,11 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
     // All info for ProgressBar
     let mut dims: Vec<usize> = self.index.dimensions().clone();
     dims.push(1 as usize);
-    let mut postnums: Vec<usize> = AESSolver::<L>::SKIPS
+    let mut postnums: Vec<usize> = AESSolver::SKIPS
       .iter()
       .map(|s| std::iter::Product::product((&dims[(s + 0)..]).iter()))
       .collect::<Vec<usize>>();
-    let prenum: usize = std::iter::Product::product((&dims[0..(AESSolver::<L>::SKIPS[1])]).iter());
+    let prenum: usize = std::iter::Product::product((&dims[0..(AESSolver::SKIPS[1])]).iter());
 
     let mut n: u64 = 1;
     let mut too_big: bool = false;
@@ -116,7 +116,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
 
     if too_big {
       n = prenum as u64;
-      postnums = vec![(dims[AESSolver::<L>::SKIPS[0] - 1]), 1, 0, 0, 0, 0, 0, 0, 0];
+      postnums = vec![(dims[AESSolver::SKIPS[0] - 1]), 1, 0, 0, 0, 0, 0, 0, 0];
     }
 
     // TODO: Double check increases for correctness
@@ -260,7 +260,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
 
       let ii = self.index.get();
       let ckt: Vec<u8> = (0..16)
-        .map(|j| self.candidates[j][ii[AESSolver::<L>::INV_PERMUTATION[j]] as usize])
+        .map(|j| self.candidates[j][ii[AESSolver::INV_PERMUTATION[j]] as usize])
         .collect();
       sol.push(ckt.clone());
       res = self.index.inc();
@@ -301,12 +301,12 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
 
         let xs: Vec<u8> = checks[..4]
           .iter()
-          .map(|i| self.inputs[j][AESSolver::<L>::PERMUTATION[*i]])
+          .map(|i| self.inputs[j][AESSolver::PERMUTATION[*i]])
           .collect();
 
         let ks = checks
           .iter()
-          .map(|i| self.candidates[AESSolver::<L>::PERMUTATION[*i]][ii[*i]])
+          .map(|i| self.candidates[AESSolver::PERMUTATION[*i]][ii[*i]])
           .collect();
 
         t = Self::check(
@@ -314,7 +314,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
           ks,
           rc,
           self.leaks[2 * j + 1][weight_i].clone(),
-          &self.leakfun,
+          self.leakfun.0,
         );
 
         if std::ops::Not::not(t) {
@@ -331,9 +331,8 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
   }
 
   /// Get the key candidates for an input, leaks and leak function
-  pub fn get_candidates(x: &X, w1: &Vec<L>, leakfun: &Box<dyn LeakFun<I, L>>) -> Vec<K> {
-    let ilf = (**leakfun).get_inv_leak_f();
-    let binding = (*w1).iter().map(|i| ilf(i)).into_iter();
+  pub fn get_candidates(x: &X, w1: &Vec<L>, leakfuninv: LeakFInv) -> Vec<K> {
+    let binding = (*w1).iter().map(|i| leakfuninv(*i)).into_iter();
     let binding = binding.zip((*x).iter()).collect::<Vec<_>>();
     let cw1: Vec<_> = binding
       .iter()
@@ -343,7 +342,7 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
   }
 
   /// 2nd pre-sbox general check
-  pub fn check(x: Vec<u8>, k: Vec<u8>, c: u8, w: L, leakfun: &Box<dyn LeakFun<u8, L>>) -> bool {
+  pub fn check(x: Vec<u8>, k: Vec<u8>, c: u8, w: u8, leakfun: LeakF) -> bool {
     if (k.len() < 5) | (x.len() < 4) {
       return false;
     }
@@ -354,7 +353,6 @@ impl<'a, L: Clone + From<L> + std::fmt::Debug + std::cmp::PartialEq<L>> AESSolve
       ^ AES::s(k[4])
       ^ c
       ^ k[5..].iter().fold(0, |x, y| x ^ y);
-    let ilf = (**leakfun).get_leak_f();
-    w == ilf(&AES::s(t))
+    w == leakfun(AES::s(t))
   }
 }
