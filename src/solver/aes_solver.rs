@@ -132,34 +132,34 @@ impl<'a> AESSolver {
 
     let mut changed: bool = true;
     let mut tmp: bool;
-    let mut res: Result<bool, ()> = Ok(false);
+    let mut res: Result<(usize, bool), ()> = Ok((0, false));
 
     'general: while self.index.check() {
       // Check Eq 1
       let x: Vec<usize> = vec![0, 1, 2, 3, 4, 0];
       (_, res) = self.check_cycle(x, AES::rc(1), 0, 1, Some((&pb, postnums[0] as u64)));
-      if res != Ok(false) {
+      if res != Ok((0, false)) {
         continue;
       }
 
       // Check Eq 3
       let x: Vec<usize> = vec![2, 3, 0, 1, 3, 5];
       (_, res) = self.check_cycle(x, 0, 2, 2, Some((&pb, postnums[1] as u64)));
-      if res != Ok(false) {
+      if res != Ok((0, false)) {
         continue;
       }
 
       // Check Eq 2
       let x: Vec<usize> = vec![1, 2, 3, 0, 7, 6];
       (_, res) = self.check_cycle(x, 0, 1, 3, Some((&pb, postnums[2] as u64)));
-      if res != Ok(false) {
+      if res != Ok((0, false)) {
         continue;
       }
 
       // Check Eq 4
       let x: Vec<usize> = vec![3, 0, 1, 2, 9, 8];
       (_, res) = self.check_cycle(x, 0, 3, 4, Some((&pb, postnums[3] as u64)));
-      if res != Ok(false) {
+      if res != Ok((0, false)) {
         continue;
       }
 
@@ -168,13 +168,13 @@ impl<'a> AESSolver {
       while changed {
         let x: Vec<usize> = vec![11, 10, 7, 8, 4, 0, 11];
         (_, res) = self.check_cycle(x, AES::rc(1), 4, 5, Some((&pb, postnums[4] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
 
         let x: Vec<usize> = vec![10, 7, 8, 11, 7, 6, 1];
         (changed, res) = self.check_cycle(x, 0, 5, 5, Some((&pb, postnums[4] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
       }
@@ -182,7 +182,7 @@ impl<'a> AESSolver {
       // Check Eq 8
       let x: Vec<usize> = vec![8, 11, 10, 7, 9, 8, 12];
       (_, res) = self.check_cycle(x, 0, 7, 6, Some((&pb, postnums[5] as u64)));
-      if res != Ok(false) {
+      if res != Ok((0, false)) {
         continue;
       }
 
@@ -192,13 +192,13 @@ impl<'a> AESSolver {
         let x: Vec<usize> = vec![13, 4, 5, 12, 4, 0, 11, 13];
         (_, res) = self.check_cycle(x, AES::rc(1), 8, 7, Some((&pb, postnums[6] as u64)));
 
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
 
         let x: Vec<usize> = vec![4, 5, 12, 13, 7, 6, 1, 10];
         (changed, res) = self.check_cycle(x, 0, 9, 7, Some((&pb, postnums[6] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
       }
@@ -208,13 +208,13 @@ impl<'a> AESSolver {
       while changed {
         let x: Vec<usize> = vec![7, 8, 11, 10, 3, 5, 14];
         (_, res) = self.check_cycle(x, 0, 6, 8, Some((&pb, postnums[7] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
 
         let x: Vec<usize> = vec![5, 12, 13, 4, 3, 5, 14, 2];
         (changed, res) = self.check_cycle(x, 0, 10, 8, Some((&pb, postnums[7] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
       }
@@ -224,35 +224,35 @@ impl<'a> AESSolver {
       while changed {
         let x: Vec<usize> = vec![12, 13, 4, 5, 9, 8, 12, 15];
         (tmp, res) = self.check_cycle(x, 0, 11, 9, Some((&pb, postnums[8] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
         changed = tmp;
 
         let x: Vec<usize> = vec![9, 6, 14, 15, 4, 0, 11, 13, 9];
         (tmp, res) = self.check_cycle(x, AES::rc(1), 12, 9, Some((&pb, postnums[8] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
         changed = changed | tmp;
 
         let x: Vec<usize> = vec![6, 14, 15, 9, 7, 6, 1, 10, 4];
         (tmp, res) = self.check_cycle(x, 0, 13, 9, Some((&pb, postnums[8] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
         changed = changed | tmp;
 
         let x: Vec<usize> = vec![14, 15, 9, 6, 3, 5, 14, 2, 7];
         (tmp, res) = self.check_cycle(x, 0, 14, 9, Some((&pb, postnums[8] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
         changed = changed | tmp;
 
         let x: Vec<usize> = vec![15, 9, 6, 14, 9, 8, 12, 15, 3];
         (tmp, res) = self.check_cycle(x, 0, 15, 9, Some((&pb, postnums[8] as u64)));
-        if res != Ok(false) {
+        if res != Ok((0, false)) {
           continue 'general;
         }
         changed = changed | tmp;
@@ -282,10 +282,10 @@ impl<'a> AESSolver {
     weight_i: usize,
     skip_i: usize,
     pb: Option<(&ProgressBar, u64)>,
-  ) -> (bool, Result<bool, ()>) {
+  ) -> (bool, Result<(usize, bool), ()>) {
     let mut changed = false;
     let mut t = false;
-    let mut tres = Ok(false);
+    let mut tres = Ok((0, false));
     let mut pb_flag = false;
     let (pb, n) = match pb {
       Some((x, y)) => {
@@ -295,7 +295,7 @@ impl<'a> AESSolver {
       None => todo!(),
     };
 
-    'outer: while (tres == Ok(false)) & (std::ops::Not::not(t)) {
+    'outer: while (tres == Ok((0, false))) & (std::ops::Not::not(t)) {
       for j in 0..self.inputs.len() {
         let ii = self.index.get();
 

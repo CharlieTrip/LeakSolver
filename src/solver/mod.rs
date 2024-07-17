@@ -1,15 +1,14 @@
 pub mod aes_solver;
 
-// use crate::leakfun::LeakFun;
 // use indextree::IndexTree;
 // use std::time::Duration;
 
 // /// Solver Struct
 // /// X: input, K: key, I: leak input, L: leak output
-// struct Solver<X, K, I, L> {
+// pub struct Solver<X, K, I, L> {
 //   inputs: Vec<X>,
 //   leaks: Vec<Vec<L>>,
-//   leakfun: Box<dyn LeakFun<I, L>>,
+//   leakfun: fn(I) -> L,
 //   index: IndexTree,
 //   solutions: Vec<K>,
 // }
@@ -18,7 +17,7 @@ pub mod aes_solver;
 // /// X: input, K: key, I: leak input, L: leak output
 // pub trait Solving<X, K, I, L> {
 //   /// Generate solver for the specific problem
-//   fn new(inputs: Vec<X>, leaks: Vec<L>, leakfun: Box<dyn LeakFun<I, L>>) -> Solver<X, K, I, L>;
+//   fn new(inputs: Vec<X>, leaks: Vec<L>, leakfun: fn(I) -> L) -> Solver<X, K, I, L>;
 
 //   /// Get the key candidates for the solver's problem
 //   fn get_candidates(solver: Solver<X, K, I, L>) -> Vec<K>;
