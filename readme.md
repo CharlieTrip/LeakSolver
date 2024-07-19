@@ -25,7 +25,8 @@
 * [ ] Full CLI?
 * [x] Check for further generalization
 	+ [x] Structured description of the checks
-	+ [ ] Implement generalisation
+	+ [x] Implement generalisation
+	+ [ ] Search generalisation
 	+ [ ] Compute leaks by unrolling full round
 * [ ] Parallelism Code
 	+ [ ] Toy Example for search

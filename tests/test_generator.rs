@@ -4,13 +4,11 @@ extern crate leak_solver;
 mod aes_gen_h8_test {
   use crate::leak_solver::generator::aes_generator::AESGenerator2Rounds as AESGen;
   use crate::leak_solver::generator::Generator;
-  use crate::leak_solver::leakfun::hw8::Hamming8 as H8;
   use crate::leak_solver::leakfun::LeakFun;
+  use leak_solver::leakfun::hw8::Hamming8;
 
-  fn leak() -> Box<dyn Fn(&u8) -> u8> {
-    let h8 = H8 {};
-    let lf = h8.get_leak_f();
-    lf
+  fn leak() -> fn(u8) -> u8 {
+    Hamming8::leak_f
   }
 
   #[test]

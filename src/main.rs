@@ -11,7 +11,8 @@ use crate::generator::Generator;
 use crate::leakfun::hw8::Hamming8;
 use crate::leakfun::LeakFun;
 use crate::solver::aes_solver::AESSolver;
-use crate::stat::random_test;
+use crate::stat::random_test_jump;
+use std::time::Duration;
 
 use std::env;
 
@@ -43,8 +44,8 @@ fn main() {
   };
 
   for i in spec..(spec + 1) {
-    random_test(tests, i, false);
-    random_test(tests, i, true);
+    random_test_jump(tests, i, false);
+    random_test_jump(tests, i, true);
   }
 }
 
@@ -62,7 +63,12 @@ fn min_test() {
 
   let mut solver = AESSolver::new(&([x].to_vec()), &([gen].to_vec()), (lf, ilf));
 
-  let (sols, dur) = solver.solve();
+  let sols = solver.solve();
+  let dur = solver.timing();
+  let dur = match dur {
+    Some(x) => x,
+    None => Duration::new(0, 0),
+  };
 
   println!(
     "time: {:?}\nsols: {:?} <- {:?}",

@@ -4,6 +4,8 @@ use crate::generator::Generator;
 use crate::leakfun::hw8::Hamming8;
 use crate::leakfun::LeakFun;
 use crate::solver::aes_solver::AESSolver;
+use crate::solver::aes_solver_jump::AESSolverJump;
+use core::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::*;
@@ -11,7 +13,7 @@ use rand::prelude::*;
 const HWSCORE: [u8; 9] = [0, 1, 2, 3, 4, 3, 2, 1, 0];
 const BINOM: [u8; 9] = [1, 8, 28, 56, 70, 56, 28, 8, 1];
 
-pub fn random_test(tot: usize, weight: u8, inv: bool) {
+pub fn random_test_old(tot: usize, weight: u8, inv: bool) {
   let mut rng = rand::thread_rng();
 
   let sty = ProgressStyle::with_template(
@@ -59,7 +61,183 @@ pub fn random_test(tot: usize, weight: u8, inv: bool) {
 
     let mut solver = AESSolver::new(&([x.clone()].to_vec()), &([gen].to_vec()), (lf, ilf));
 
-    let (sols, dur) = solver.solve();
+    let sols = solver.solve();
+    let dur = solver.timing();
+    let dur = match dur {
+      Some(x) => x,
+      None => Duration::new(0, 0),
+    };
+
+    println!(
+      "{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?}",
+      weight,
+      w,
+      win,
+      wout,
+      wfin,
+      dur,
+      sols.len(),
+      sols.contains(&k),
+      x,
+      k
+    );
+  }
+  pb.finish_and_clear();
+}
+
+pub fn random_test_jump(tot: usize, weight: u8, inv: bool) {
+  let mut rng = rand::thread_rng();
+
+  let sty = ProgressStyle::with_template(
+            "{msg} {spinner:.green} [{elapsed_precise}] [{bar:25.cyan/blue}] ({pos}/{len}, {eta} ({per_sec})",
+        )
+        .unwrap()
+        .progress_chars("##-");
+
+  let pb = ProgressBar::new(tot as u64);
+  pb.set_style(sty.clone());
+  pb.set_message(format!("Test {} {}", weight, inv));
+
+  for _ in 0..tot {
+    pb.inc(1);
+
+    let x: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
+
+    // Generate an array of 16 uniformly random u8 elements
+    let mut k = rnd_vec(weight, inv);
+
+    // Fix Key to preserve the weight out desired
+    for i in 0..16 {
+      k[i] ^= x[i];
+    }
+
+    let lf = Hamming8::leak_f;
+    let ilf = Hamming8::inv_leak_f;
+
+    let gen = AESGen::generate(&x, &k, lf);
+
+    // Print the generated array
+
+    let mut w = 0;
+    let mut win = 0;
+    let mut wout = 0;
+    let mut wfin = 0;
+
+    for i in 0..16 {
+      let j = lf(k[i]) as usize;
+      w += gen[i];
+      win += HWSCORE[j];
+      wout += HWSCORE[gen[i] as usize];
+      wfin += HWSCORE[gen[16 + i] as usize];
+    }
+
+    let mut solver = AESSolverJump::new(&([x.clone()].to_vec()), &([gen].to_vec()), (lf, ilf));
+
+    let sols = solver.solve();
+    let dur = solver.timing();
+    let dur = match dur {
+      Some(x) => x,
+      None => Duration::new(0, 0),
+    };
+
+    println!(
+      "{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?}",
+      weight,
+      w,
+      win,
+      wout,
+      wfin,
+      dur,
+      sols.len(),
+      sols.contains(&k),
+      x,
+      k
+    );
+  }
+  pb.finish_and_clear();
+}
+
+pub fn random_test_both(tot: usize, weight: u8, inv: bool) {
+  let mut rng = rand::thread_rng();
+
+  let sty = ProgressStyle::with_template(
+            "{msg} {spinner:.green} [{elapsed_precise}] [{bar:25.cyan/blue}] ({pos}/{len}, {eta} ({per_sec})",
+        )
+        .unwrap()
+        .progress_chars("##-");
+
+  let pb = ProgressBar::new(tot as u64);
+  pb.set_style(sty.clone());
+  pb.set_message(format!("Test {} {}", weight, inv));
+
+  for _ in 0..tot {
+    pb.inc(1);
+
+    let x: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
+
+    // Generate an array of 16 uniformly random u8 elements
+    let mut k = rnd_vec(weight, inv);
+
+    // Fix Key to preserve the weight out desired
+    for i in 0..16 {
+      k[i] ^= x[i];
+    }
+
+    let lf = Hamming8::leak_f;
+    let ilf = Hamming8::inv_leak_f;
+
+    let gen = AESGen::generate(&x, &k, lf);
+
+    // Print the generated array
+
+    let mut w = 0;
+    let mut win = 0;
+    let mut wout = 0;
+    let mut wfin = 0;
+
+    for i in 0..16 {
+      let j = lf(k[i]) as usize;
+      w += gen[i];
+      win += HWSCORE[j];
+      wout += HWSCORE[gen[i] as usize];
+      wfin += HWSCORE[gen[16 + i] as usize];
+    }
+
+    let mut solver = AESSolver::new(
+      &([x.clone()].to_vec()),
+      &([gen.clone()].to_vec()),
+      (lf, ilf),
+    );
+
+    let sols = solver.solve();
+    let dur = solver.timing();
+    let dur = match dur {
+      Some(x) => x,
+      None => Duration::new(0, 0),
+    };
+
+    println!(
+      "{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?}",
+      weight,
+      w,
+      win,
+      wout,
+      wfin,
+      dur,
+      sols.len(),
+      sols.contains(&k),
+      x,
+      k
+    );
+
+    let mut solver = AESSolverJump::new(&([x.clone()].to_vec()), &([gen].to_vec()), (lf, ilf));
+
+    let sols = solver.solve();
+    let dur = solver.timing();
+    let dur = match dur {
+      Some(x) => x,
+      None => Duration::new(0, 0),
+    };
 
     println!(
       "{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?};{:?}",

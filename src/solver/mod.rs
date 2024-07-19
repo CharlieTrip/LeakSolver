@@ -1,4 +1,5 @@
 pub mod aes_solver;
+pub mod aes_solver_jump;
 
 // use indextree::IndexTree;
 // use std::time::Duration;

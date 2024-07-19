@@ -5,7 +5,7 @@ use crate::cipher::aes::AES;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 
-use indextree::IndexTree;
+use index_tree::IndexTree;
 use std::time::Duration;
 
 type X = Vec<u8>;
@@ -23,6 +23,8 @@ pub struct AESSolver {
   pub leakfun: (LeakF, LeakFInv),
   pub index: IndexTree,
   pub solutions: Vec<K>,
+  timing: Option<Duration>,
+  count: usize,
 }
 
 /// Solver Trait
@@ -83,12 +85,14 @@ impl<'a> AESSolver {
       leaks: leakss,
       leakfun: leakfun,
       solutions: solutions.to_vec(),
+      timing: None,
+      count: 0,
     }
   }
 
   /// Solve the problem
   /// Return the candidates and the time spent computing
-  pub fn solve(&mut self) -> (Vec<Vec<u8>>, Duration) {
+  pub fn solve(&mut self) -> Vec<Vec<u8>> {
     // TODO: Fix overflow is usize is u32
 
     // All info for ProgressBar
@@ -270,8 +274,9 @@ impl<'a> AESSolver {
     self.solutions = sol.clone();
 
     pb.finish_and_clear();
+    self.timing = Some(pb.elapsed());
 
-    (sol, pb.elapsed())
+    sol
   }
 
   /// Abstraction: check one level
@@ -298,6 +303,8 @@ impl<'a> AESSolver {
     'outer: while (tres == Ok((0, false))) & (std::ops::Not::not(t)) {
       for j in 0..self.inputs.len() {
         let ii = self.index.get();
+
+        self.count += 1;
 
         let xs: Vec<u8> = checks[..4]
           .iter()
@@ -354,5 +361,13 @@ impl<'a> AESSolver {
       ^ c
       ^ k[5..].iter().fold(0, |x, y| x ^ y);
     w == leakfun(AES::s(t))
+  }
+
+  pub fn timing(&self) -> Option<Duration> {
+    self.timing
+  }
+
+  pub fn counting(&self) -> usize {
+    self.count
   }
 }
