@@ -10,7 +10,7 @@ use tree_jump::Constrain;
 use std::time::Duration;
 use tree_jump::TreeJump;
 
-use super::aes_solver::AESSolver;
+use crate::solver::aes_solver_old::AESSolver;
 
 type X = Vec<u8>;
 type K = Vec<u8>;

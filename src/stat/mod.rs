@@ -3,8 +3,8 @@ use crate::generator::aes_generator::AESGenerator2Rounds as AESGen;
 use crate::generator::Generator;
 use crate::leakfun::hw8::Hamming8;
 use crate::leakfun::LeakFun;
-use crate::solver::aes_solver::AESSolver;
 use crate::solver::aes_solver_jump::AESSolverJump;
+use crate::solver::aes_solver_old::AESSolver;
 use core::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};

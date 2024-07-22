@@ -26,8 +26,7 @@
 * [x] Check for further generalization
 	+ [x] Structured description of the checks
 	+ [x] Implement generalisation
-	+ [ ] Search generalisation
-	+ [ ] Compute leaks by unrolling full round
+	+ [X] Search generalisation
 * [ ] Parallelism Code
 	+ [ ] Toy Example for search
 	+ [ ] Implement in Search

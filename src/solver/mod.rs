@@ -1,29 +1,52 @@
+// AES Solvers
 pub mod aes_solver;
 pub mod aes_solver_jump;
+pub mod aes_solver_old;
 
-// use indextree::IndexTree;
-// use std::time::Duration;
+// Helpers
+pub mod helpers;
 
-// /// Solver Struct
-// /// X: input, K: key, I: leak input, L: leak output
-// pub struct Solver<X, K, I, L> {
-//   inputs: Vec<X>,
-//   leaks: Vec<Vec<L>>,
-//   leakfun: fn(I) -> L,
-//   index: IndexTree,
-//   solutions: Vec<K>,
-// }
+// Solver Traits
+use std::time::Duration;
+use tree_jump::Constrain;
 
-// /// Solver Trait
-// /// X: input, K: key, I: leak input, L: leak output
-// pub trait Solving<X, K, I, L> {
-//   /// Generate solver for the specific problem
-//   fn new(inputs: Vec<X>, leaks: Vec<L>, leakfun: fn(I) -> L) -> Solver<X, K, I, L>;
+pub trait InputHelper<K, H: Helper> {
+  fn phi(candidate: K, helper: &Option<H>) -> bool
+  where
+    Self: Sized;
 
-//   /// Get the key candidates for the solver's problem
-//   fn get_candidates(solver: Solver<X, K, I, L>) -> Vec<K>;
+  fn finalise(&self, unpermuted: &Vec<K>) -> Vec<K>
+  where
+    Self: Sized;
 
-//   /// Solve the problem
-//   /// Return the candidates and the time spent computing
-//   fn solve(&self) -> (Vec<K>, Duration);
-// }
+  fn candidates(&self) -> Vec<K>;
+}
+
+pub trait LinearHelper<K, H: Helper>
+where
+  K: Clone,
+  H: Clone,
+{
+  fn linear(&self) -> (Vec<Option<H>>, Vec<Constrain<K, H>>);
+}
+
+pub trait ParallelHelper<K, H: Helper>
+where
+  K: Clone,
+  H: Clone,
+{
+  fn parallel(&self) -> (Vec<Option<H>>, Vec<Constrain<K, H>>);
+}
+
+pub trait Helper {}
+
+pub trait Solver<K, H: Helper>
+where
+  K: Clone,
+  H: Clone,
+{
+  fn new(input: (impl InputHelper<K, H> + 'static)) -> Self;
+  fn solve(&mut self) -> Vec<K>;
+  fn timing(&self) -> Option<Duration>;
+  fn counting(&self) -> usize;
+}

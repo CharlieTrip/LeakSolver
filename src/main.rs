@@ -10,15 +10,21 @@ use crate::generator::aes_generator::AESGenerator2Rounds as AESGen;
 use crate::generator::Generator;
 use crate::leakfun::hw8::Hamming8;
 use crate::leakfun::LeakFun;
-use crate::solver::aes_solver::AESSolver;
+use crate::solver::aes_solver_jump::AESSolverJump;
 use crate::stat::random_test_jump;
+use leak_solver::solver::aes_solver::AESSolverLinear;
+use leak_solver::solver::aes_solver_old::AESSolver;
+use leak_solver::solver::helpers::aes_lin_helper::AESInputHelper;
+use leak_solver::solver::Solver;
 use std::time::Duration;
 
 use std::env;
 
 fn main() {
-  // min_test();
+  test();
+}
 
+fn prompt() {
   let args: Vec<String> = env::args().collect();
 
   // Check if both arguments are provided
@@ -75,5 +81,44 @@ fn min_test() {
     dur,
     sols.len(),
     sols.contains(&k)
+  );
+}
+
+fn test() {
+  let i: u8 = 0;
+  let x: Vec<u8> = [i; 16].to_vec();
+  let k: Vec<u8> = [82, 82, 82, 0, 0, 82, 0, 0, 0, 0, 82, 0, 0, 82, 82, 82].to_vec();
+  //let k: Vec<u8> = [82, 82, 82, 82, 82, 82, 82, 82, 0, 82, 9, 0, 0, 82, 82, 82].to_vec();
+
+  let lf = Hamming8::leak_f;
+  let ilf = Hamming8::inv_leak_f;
+
+  let gen = AESGen::generate(&x, &k, lf);
+
+  let inputs = AESInputHelper::new([x.clone()].to_vec(), [gen.clone()].to_vec(), (lf, ilf));
+  let mut solver = AESSolverLinear::new(inputs);
+
+  let sols = solver.solve();
+  let dur = solver.timing();
+
+  print!(
+    "time: {:?} sols: {:?} <- {:?} , {:?}\n",
+    dur,
+    sols.len(),
+    sols.contains(&k),
+    solver.counting(),
+  );
+
+  let mut solver = AESSolverJump::new(&([x].to_vec()), &([gen].to_vec()), (lf, ilf));
+
+  let sols = solver.solve();
+  let dur = solver.timing();
+
+  print!(
+    "time: {:?} sols: {:?} <- {:?} , {:?}\n",
+    dur,
+    sols.len(),
+    sols.contains(&k),
+    solver.counting(),
   );
 }
