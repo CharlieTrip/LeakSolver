@@ -1,7 +1,7 @@
-// #![allow(unused_imports, unused_variables, dead_code)]
+#![allow(unused_imports, unused_variables, dead_code)]
 
-use crate::solver::helpers::aes_lin_helper::AESHelper;
-use crate::solver::helpers::aes_lin_helper::AESInputHelper;
+use crate::solver::helpers::aes128_helper_lin::AESHelper;
+use crate::solver::helpers::aes128_helper_lin::AESInputHelper;
 use crate::solver::InputHelper;
 use crate::solver::LinearHelper;
 use crate::solver::Solver;
@@ -19,13 +19,13 @@ type K = Vec<u8>;
 #[derive(Clone, Debug)]
 pub struct AESSolverLinear {
   pub inputs: AESInputHelper,
-  pub index: TreeJump<u8, AESHelper>,
+  index: TreeJump<u8, AESHelper>,
   pub solutions: Vec<K>,
   bars: MultiProgress,
 }
 
-impl Solver<K, AESHelper> for AESSolverLinear {
-  fn new(input: (impl InputHelper<K, AESHelper> + 'static)) -> Self {
+impl Solver<K, u8, AESHelper> for AESSolverLinear {
+  fn new(input: (impl InputHelper<K, u8, AESHelper> + 'static)) -> Self {
     // Casting
     let input = (&input as &dyn Any)
       .downcast_ref::<AESInputHelper>()
@@ -44,9 +44,15 @@ impl Solver<K, AESHelper> for AESSolverLinear {
 
     let pb = mp.add(pb);
 
-    let (helpers, phis) = input.linear();
+    let (helpers, phis) = input.conditions();
 
-    let treejump = TreeJump::new(Some(helpers.clone()), input.candidates(), phis, Some(pb));
+    let treejump = TreeJump::new_vector(
+      Some(helpers.clone()),
+      input.candidates(None),
+      phis,
+      Some(pb),
+    );
+
     AESSolverLinear {
       inputs: input.clone(),
       index: treejump,

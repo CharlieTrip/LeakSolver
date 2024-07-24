@@ -15,26 +15,38 @@ type L = u8;
 type LeakF = fn(I) -> L;
 type LeakFInv = fn(u8) -> Vec<u8>;
 
-const PERMUTATION: [usize; 16] = [0, 5, 10, 15, 13, 2, 1, 14, 3, 12, 9, 4, 7, 8, 6, 11];
-const INV_PERMUTATION: [usize; 16] = [0, 6, 5, 8, 11, 1, 14, 12, 13, 10, 2, 15, 9, 4, 7, 3];
-const SKIPS: [usize; 9] = [5, 6, 8, 10, 12, 13, 14, 15, 16];
-
 #[derive(Clone, Debug)]
 pub struct AESHelper {
   inputs: AESInputHelper,
   pub c: u8,
   pub mask: Vec<usize>,
   pub index: usize,
+  fixer: Option<Vec<usize>>,
 }
 
-impl Helper for AESHelper {}
+impl Helper for AESHelper {
+  fn fix_candidate(&self, x: &Vec<usize>) -> Vec<usize> {
+    match &self.fixer {
+      None => x.to_vec(),
+      Some(fix) => fix.to_vec(),
+    }
+  }
+}
+
 impl AESHelper {
-  pub fn new(inputs: AESInputHelper, c: u8, mask: Vec<usize>, index: usize) -> Self {
+  pub fn new(
+    inputs: AESInputHelper,
+    c: u8,
+    mask: Vec<usize>,
+    index: usize,
+    fixer: Option<Vec<usize>>,
+  ) -> Self {
     AESHelper {
       inputs,
       c,
       mask,
       index,
+      fixer,
     }
   }
 }
@@ -43,7 +55,7 @@ impl AESHelper {
 pub struct AESInputHelper {
   pub x: Vec<X>,
   pub w: Vec<Vec<L>>,
-  pub candidates: Vec<K>,
+  pub candidates: Vec<Vec<K>>,
   pub leakfun: LeakF,
 }
 
@@ -84,6 +96,11 @@ impl AESInputHelper {
       .map(|x| candidates[*x as usize].clone())
       .collect();
 
+    let candidates: Vec<Vec<Vec<u8>>> = candidates
+      .iter()
+      .map(|cand| cand.iter().map(|&x| vec![x]).collect())
+      .collect();
+
     AESInputHelper {
       x: inputs,
       w: weights,
@@ -119,14 +136,15 @@ impl AESInputHelper {
   }
 }
 
-impl InputHelper<K, AESHelper> for AESInputHelper {
+impl InputHelper<K, u8, AESHelper> for AESInputHelper {
   fn phi(k: Vec<u8>, input: &Option<AESHelper>) -> bool {
     match input {
       Some(help) => {
         let hh = help;
+        let mask = hh.fix_candidate(&hh.mask);
         for j in 0..hh.inputs.x.len() {
           let ks: Vec<u8> = hh.mask.iter().map(|i| k[*i]).collect();
-          let xs: Vec<u8> = hh.mask[..4]
+          let xs: Vec<u8> = mask[..4]
             .iter()
             .map(|i| hh.inputs.x[j][PERMUTATION[*i]])
             .collect();
@@ -150,54 +168,68 @@ impl InputHelper<K, AESHelper> for AESInputHelper {
       .collect()
   }
 
-  fn candidates(&self) -> Vec<K> {
-    self.candidates.clone()
+  fn candidates(&self, mask: Option<Vec<usize>>) -> Vec<Vec<K>> {
+    match mask {
+      None => self.candidates.clone(),
+      Some(vec) => vec.iter().map(|&i| self.candidates[i].clone()).collect(),
+    }
+  }
+
+  fn conditions(&self) -> (Vec<Option<AESHelper>>, Vec<Constrain<u8, AESHelper>>) {
+    self.linear()
   }
 }
+
+const PERMUTATION: [usize; 16] = [0, 5, 10, 15, 13, 2, 14, 1, 12, 3, 4, 9, 7, 8, 6, 11];
+const INV_PERMUTATION: [usize; 16] = [0, 7, 5, 9, 10, 1, 14, 12, 13, 11, 2, 15, 8, 4, 6, 3];
 
 impl LinearHelper<L, AESHelper> for AESInputHelper {
   fn linear(&self) -> (Vec<Option<AESHelper>>, Vec<Constrain<u8, AESHelper>>) {
     let checksperm = vec![
       vec![0, 1, 2, 3, 4, 0],
       vec![2, 3, 0, 1, 3, 5],
-      vec![1, 2, 3, 0, 7, 6],
-      vec![3, 0, 1, 2, 9, 8],
-      vec![11, 10, 7, 8, 4, 0, 11],
-      vec![10, 7, 8, 11, 7, 6, 1],
-      vec![8, 11, 10, 7, 9, 8, 12],
-      vec![13, 4, 5, 12, 4, 0, 11, 13],
-      vec![4, 5, 12, 13, 7, 6, 1, 10],
-      vec![7, 8, 11, 10, 3, 5, 14],
+      vec![1, 2, 3, 0, 6, 7],
+      vec![3, 0, 1, 2, 8, 9],
+      vec![10, 11, 6, 9, 4, 0, 10],
+      vec![11, 6, 9, 10, 6, 7, 1],
+      vec![9, 10, 11, 6, 8, 9, 12],
+      vec![13, 4, 5, 12, 4, 0, 10, 13],
+      vec![4, 5, 12, 13, 6, 7, 1, 11],
+      vec![6, 9, 10, 11, 3, 5, 14],
       vec![5, 12, 13, 4, 3, 5, 14, 2],
-      vec![12, 13, 4, 5, 9, 8, 12, 15],
-      vec![9, 6, 14, 15, 4, 0, 11, 13, 9],
-      vec![6, 14, 15, 9, 7, 6, 1, 10, 4],
-      vec![14, 15, 9, 6, 3, 5, 14, 2, 7],
-      vec![15, 9, 6, 14, 9, 8, 12, 15, 3],
+      vec![12, 13, 4, 5, 8, 9, 12, 15],
+      vec![8, 7, 14, 15, 4, 0, 10, 13, 8],
+      vec![7, 14, 15, 8, 6, 7, 1, 11, 4],
+      vec![14, 15, 8, 7, 3, 5, 14, 2, 6],
+      vec![15, 8, 7, 14, 8, 9, 12, 15, 3],
     ];
-    let rc = [
-      AES::rc(1),
-      0,
-      0,
-      0,
-      AES::rc(1),
-      0,
-      0,
-      AES::rc(1),
-      0,
-      0,
-      0,
-      0,
-      AES::rc(1),
-      0,
-      0,
-      0,
-    ];
+
     let checkindex = [0, 2, 1, 3, 4, 5, 7, 8, 9, 6, 10, 11, 12, 13, 14, 15];
-    let skipindex: Vec<usize> = [1, 2, 3, 4, 5, 5, 6, 7, 7, 8, 8, 9, 9, 9, 9, 9]
-      .iter()
-      .map(|&i| SKIPS[i - 1] - 1)
-      .collect();
+
+    let skipindex: Vec<usize> = vec![4, 5, 7, 9, 11, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 15];
+
+    let fixer: Vec<Option<Vec<usize>>> = vec![None; 16];
+
+    let rc: [u8; 16] = [
+      AES::rc(1),
+      0,
+      0,
+      0,
+      AES::rc(1),
+      0,
+      0,
+      0,
+      AES::rc(1),
+      0,
+      0,
+      0,
+      AES::rc(1),
+      0,
+      0,
+      0,
+    ];
+
+    let rc: Vec<u8> = checkindex.iter().map(|i| rc[*i]).collect();
 
     let helpers: Vec<Option<AESHelper>> = (0..16)
       .into_iter()
@@ -207,6 +239,7 @@ impl LinearHelper<L, AESHelper> for AESInputHelper {
           rc[i],
           checksperm[i].clone(),
           checkindex[i],
+          fixer[i].clone(),
         ))
       })
       .collect::<Vec<Option<AESHelper>>>();

@@ -1,16 +1,16 @@
-// AES Solvers
-pub mod aes_solver;
-pub mod aes_solver_jump;
-pub mod aes_solver_old;
-
-// Helpers
+pub mod aes128;
 pub mod helpers;
 
 // Solver Traits
 use std::time::Duration;
 use tree_jump::Constrain;
 
-pub trait InputHelper<K, H: Helper> {
+pub trait InputHelper<K, I, H: Helper>
+where
+  K: Clone,
+  I: Clone,
+  H: Clone,
+{
   fn phi(candidate: K, helper: &Option<H>) -> bool
   where
     Self: Sized;
@@ -19,7 +19,8 @@ pub trait InputHelper<K, H: Helper> {
   where
     Self: Sized;
 
-  fn candidates(&self) -> Vec<K>;
+  fn candidates(&self, mask: Option<Vec<usize>>) -> Vec<Vec<K>>;
+  fn conditions(&self) -> (Vec<Option<H>>, Vec<Constrain<I, H>>);
 }
 
 pub trait LinearHelper<K, H: Helper>
@@ -36,16 +37,21 @@ where
   H: Clone,
 {
   fn parallel(&self) -> (Vec<Option<H>>, Vec<Constrain<K, H>>);
+  fn par_dimensions(&self) -> (Vec<Vec<usize>>, Vec<usize>);
+  fn par_skips(&self) -> (Vec<Vec<usize>>, Vec<usize>);
 }
 
-pub trait Helper {}
+pub trait Helper {
+  fn fix_candidate(&self, partial: &Vec<usize>) -> Vec<usize>;
+}
 
-pub trait Solver<K, H: Helper>
+pub trait Solver<K, I, H: Helper>
 where
   K: Clone,
+  I: Clone,
   H: Clone,
 {
-  fn new(input: (impl InputHelper<K, H> + 'static)) -> Self;
+  fn new(input: (impl InputHelper<K, I, H> + 'static)) -> Self;
   fn solve(&mut self) -> Vec<K>;
   fn timing(&self) -> Option<Duration>;
   fn counting(&self) -> usize;

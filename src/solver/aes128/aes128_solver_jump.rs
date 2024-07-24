@@ -1,16 +1,14 @@
-#![allow(unused_assignments, unused_variables, unused_imports)]
+#![allow(dead_code)]
+//#![allow(unused_assignments, unused_variables, unused_imports)]
 
 use crate::cipher::aes::AES;
 use indicatif::MultiProgress;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
-use tree_jump::Candidate;
 use tree_jump::Constrain;
 
 use std::time::Duration;
 use tree_jump::TreeJump;
-
-use crate::solver::aes_solver_old::AESSolver;
 
 type X = Vec<u8>;
 type K = Vec<u8>;
@@ -23,7 +21,7 @@ type LeakFInv = fn(L) -> Vec<I>;
 pub struct AESSolverJump {
   pub inputs: Vec<Option<Helper>>,
   pub leaks: Vec<Vec<L>>,
-  pub candidates: Vec<Vec<u8>>,
+  candidates: Vec<Vec<Vec<u8>>>,
   pub leakfun: (LeakF, LeakFInv),
   pub index: TreeJump<u8, Helper>,
   pub solutions: Vec<K>,
@@ -75,8 +73,13 @@ impl<'a> AESSolverJump {
       .iter()
       .map(|x| candidates[*x as usize].clone())
       .collect();
-    let dimensions: Vec<_> = candidates.iter().map(|cand| cand.len()).collect();
+    // let _dimensions: Vec<_> = candidates.iter().map(|cand| cand.len()).collect();
     let solutions: Vec<K> = vec![];
+
+    let candidates: Vec<Vec<Vec<u8>>> = candidates
+      .iter()
+      .map(|cand| cand.iter().map(|&x| vec![x]).collect())
+      .collect();
 
     let mp = MultiProgress::new();
 
@@ -154,12 +157,12 @@ impl<'a> AESSolverJump {
       })
       .collect();
 
-    let treejump = TreeJump::new(Some(helpers.clone()), candidates.clone(), phis, Some(pb));
+    let treejump = TreeJump::new_vector(Some(helpers.clone()), candidates.clone(), phis, Some(pb));
 
     AESSolverJump {
       index: treejump,
       inputs: helpers,
-      candidates: candidates.to_vec(),
+      candidates: candidates,
       leaks: leakss,
       leakfun: leakfun,
       solutions: solutions.to_vec(),
@@ -172,7 +175,7 @@ impl<'a> AESSolverJump {
   pub fn solve(&mut self) -> Vec<Vec<u8>> {
     let sols = self.index.search();
 
-    let sols = sols
+    let sols: Vec<K> = sols
       .into_iter()
       .map(|sol| {
         Self::INV_PERMUTATION
@@ -184,8 +187,8 @@ impl<'a> AESSolverJump {
       .collect();
 
     let _ = self.bars.clear();
-    let duration = self.index.timing();
 
+    self.solutions = sols.clone();
     sols
   }
 

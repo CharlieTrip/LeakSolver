@@ -16,18 +16,21 @@
 
 ## TODO (algorithmic)
 
-* [x] Simplify the HOF structure for leaks
+
+* [ ] Improve Efficiency
+	+ [ ] Profile `TreeJump` and `IndexTree`?
 * [ ] Different leak function (Hamming distance?)
+* [ ] Better structure for different solvers + helper
 * [ ] Different cipher-scenarios
 	+ [ ] SKINNY
 	+ [ ] AES-192
 	+ [ ] AES-256
 * [ ] Full CLI?
+* [x] Simplify the HOF structure for leaks
 * [x] Check for further generalization
 	+ [x] Structured description of the checks
 	+ [x] Implement generalisation
-	+ [X] Search generalisation
-* [ ] Parallelism Code
-	+ [ ] Toy Example for search
-	+ [ ] Implement in Search
+	+ [x] Search generalisation
+* [x] Parallelism Code
+	+ [x] Implement in Search
 * [x] Sanitize inputs (minimal CLI)

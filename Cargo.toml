@@ -10,6 +10,7 @@ indicatif = "0.17.7"
 rand = "0.8.4"
 tree_jump = { git = "https://github.com/CharlieTrip/TreeJump" }
 index_tree = { git = "https://github.com/CharlieTrip/IndexTree" }
+rayon = "1.10.0"
 
 [profile.release]
 opt-level = 3
