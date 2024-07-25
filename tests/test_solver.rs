@@ -6,7 +6,7 @@ mod aes_solver_test {
   use crate::leak_solver::generator::Generator;
   use crate::leak_solver::leakfun::hw8::Hamming8;
   use crate::leak_solver::leakfun::LeakFun;
-  use crate::leak_solver::solver::aes_solver::AESSolver;
+  use crate::leak_solver::solver::aes128::aes128_solver_jump::AESSolverJump;
 
   #[test]
   fn solver_single() {
@@ -19,7 +19,7 @@ mod aes_solver_test {
       let ilf = Hamming8::inv_leak_f;
 
       let gen = AESGen::generate(&x, &k, lf);
-      let mut solver = AESSolver::new(&([x].to_vec()), &([gen].to_vec()), (lf, ilf));
+      let mut solver = AESSolverJump::new(&([x].to_vec()), &([gen].to_vec()), (lf, ilf));
 
       let sols = solver.solve();
       assert_eq!(sols.contains(&k), true);
@@ -39,7 +39,8 @@ mod aes_solver_test {
       let gen1 = AESGen::generate(&x1, &k, lf);
       let gen2 = AESGen::generate(&x2, &k, lf);
 
-      let mut solver = AESSolver::new(&([x1, x2].to_vec()), &([gen1, gen2].to_vec()), (lf, ilf));
+      let mut solver =
+        AESSolverJump::new(&([x1, x2].to_vec()), &([gen1, gen2].to_vec()), (lf, ilf));
 
       let sols = solver.solve();
       assert_eq!(sols.contains(&k), true);
